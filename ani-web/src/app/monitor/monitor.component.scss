@@ -1,0 +1,14 @@
+.mem-container {
+  display: flex;
+}
+.mem-table-container,
+.mem-chart-container {
+  flex: 1;
+  padding: 20px;
+  width: 40vw;
+  height: 30vh;
+  overflow-y: scroll;
+}
+.mem-table {
+  width: 100%;
+}

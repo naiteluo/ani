@@ -7,6 +7,16 @@ enum FMode {
   SQL
 }
 
+export const MemColNames = [
+  'Pss Total',
+  'Private Dirty',
+  'Private Clean',
+  'SwapPss Dirty',
+  'Heap Size',
+  'Heap Alloc',
+  'Heap Free',
+]
+
 const reg1 = /\*\* MEMINFO in pid (\d+) \[(.*)\] \*\*/i
 const reg2 = /App Summary/i
 const reg3 = /Objects/i
@@ -80,3 +90,9 @@ export function formatMeminfo(input: string) {
     meminfoSection,
   }
 }
+
+export function formatIntoAlignCol(input: string, length: number) {
+  const emptyStr = (new Array(length + 1)).join(' ')
+  return `${input}${emptyStr.slice(input.length - 1, length - 1)}`
+}
+
