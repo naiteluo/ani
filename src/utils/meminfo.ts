@@ -1,11 +1,11 @@
 import { exec } from 'child_process'
-import { Observable, of, OperatorFunction } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { combineLatest, interval, Observable, of, OperatorFunction } from 'rxjs'
+import { mergeMap, switchMap } from 'rxjs/operators'
 import { formatMeminfo } from './meminfo-parser'
 
 const command = (proc: string) => () => {
   return new Observable<string>(subscriber => {
-    exec(`adb shell dumpsys meminfo ${proc}`, (error, stdout) => {
+    exec(`adb -s 3422ed52 shell dumpsys meminfo ${proc}`, (error, stdout) => {
       if (error) {
         subscriber.error(error)
       } else {
@@ -16,21 +16,38 @@ const command = (proc: string) => () => {
   })
 }
 
-const parse = (): OperatorFunction<string, any> => switchMap(data => {
-  return of(formatMeminfo(data))
+const parser = (): OperatorFunction<string[], any> => switchMap(data => {
+  return of(data.map(v => formatMeminfo(v)))
 })
 
+const DefaultMeminfoMonitorTime = 5000
+
 export class MeminfoMonitor {
-  private proc: string;
+  private processes: string[] = [];
 
-  private interval = 5000;
+  private commands: Observable<string>[] = [];
 
-  constructor(proc: string, interval: number) {
-    this.proc = proc
-    this.interval = interval
+  private time = DefaultMeminfoMonitorTime;
+
+  constructor(processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
+    this.update(processes, time)
+  }
+
+  update(processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
+    this.processes = [...processes]
+    this.commands = this.processes.map(p => {
+      return command(p)()
+    })
+    this.time = time
   }
 
   one() {
-    return command(this.proc)().pipe(parse())
+    return combineLatest(this.commands).pipe(parser())
+  }
+
+  interval() {
+    return interval(this.time).pipe(mergeMap(() => {
+      return combineLatest(this.commands)
+    }), parser())
   }
 }

@@ -6,9 +6,17 @@
   flex: 1;
   padding: 20px;
   width: 40vw;
-  height: 30vh;
+  height: 20vh;
   overflow-y: scroll;
+}
+.mem-chart-container {
+  flex: 2;
 }
 .mem-table {
   width: 100%;
+}
+.control-button-row {
+  button {
+    margin: 5px 10px;
+  }
 }

@@ -1,13 +1,14 @@
+import { SummaryType } from "./meminfo-keys"
 
 enum FMode {
-  Free,
-  MEMINFO,
-  AppSummary,
-  Objects,
-  SQL
+  Free = 'Free',
+  MEMINFO = 'MEMINFO',
+  AppSummary = 'AppSummary',
+  Objects = 'Objects',
+  SQL = 'SQL'
 }
 
-export const MemColNames = [
+export const MemRawColNames = [
   'Pss Total',
   'Private Dirty',
   'Private Clean',
@@ -17,33 +18,48 @@ export const MemColNames = [
   'Heap Free',
 ]
 
+export const MemSummaryColNames = [
+  SummaryType.JavaHeap,
+  SummaryType.NativeHeap,
+  SummaryType.Code,
+  SummaryType.Stack,
+  SummaryType.Graphics,
+  SummaryType.PrivateOther,
+  SummaryType.System,
+  SummaryType.Total,
+  SummaryType.TotalSwapPss,
+]
+
+export const MemSummaryColMatcher = {
+  [SummaryType.JavaHeap]: /Java\s+Heap:\s+(\d+)/,
+  [SummaryType.NativeHeap]: /Native\s+Heap:\s+(\d+)/,
+  [SummaryType.Code]: /Code:\s+(\d+)/,
+  [SummaryType.Stack]: /Stack:\s+(\d+)/,
+  [SummaryType.Graphics]: /Graphics:\s+(\d+)/,
+  [SummaryType.PrivateOther]: /Private\s+Other:\s+(\d+)/,
+  [SummaryType.System]: /System:\s+(\d+)/,
+  [SummaryType.Total]: /TOTAL:\s+(\d+)/,
+  [SummaryType.TotalSwapPss]: /TOTAL\s+SWAP\s+PSS:\s+(\d+)/,
+}
+
 const reg1 = /\*\* MEMINFO in pid (\d+) \[(.*)\] \*\*/i
-const reg2 = /App Summary/i
-const reg3 = /Objects/i
 const Divider = '~$~'
 
-function processMeminfoRow(row: string) {
+function processRawSectionRow(row: string) {
   const arr = row.replace(/\s{2,}/g, Divider).split(Divider).filter(v =>
     v.length !== 0
   )
   return arr
 }
 
-function processAppSummaryRow(row: string) {
-  const arr = row.replace(/\s{2,}/g, Divider).split(Divider).filter(v =>
-    v.length !== 0
-  )
-  return arr
-}
-
-export function formatMeminfo(input: string) {
-  const rows = input.split('\n')
+function parseRawSection(input: string) {
+  const start = input.indexOf('** MEMINFO')
+  const end = input.indexOf('App Summary')
+  const cut = input.substring(start, end)
+  const section: any = {}
+  const rows = cut.split('\n')
 
   let mode = FMode.Free
-
-  let pid = ''
-  let pname = ''
-  const meminfoSection: any = {}
 
   for (let i = 0; i < rows.length; i++) {
     const rowStr = rows[i].trim()
@@ -52,42 +68,49 @@ export function formatMeminfo(input: string) {
       const modeMatchingResult = rowStr.match(reg1)
       if (modeMatchingResult) {
         mode = FMode.MEMINFO
-        pid = modeMatchingResult[1]
-        pname = modeMatchingResult[2]
         // 跳过表头
         i += 3
         continue
       }
     } else if (mode === FMode.MEMINFO) {
-      const modeMatchingResult = rowStr.match(reg2)
-      if (modeMatchingResult) {
-        mode = FMode.AppSummary
-        // 跳过表头
-        i += 2
-        continue
-      }
       if (rowStr.length !== 0) {
-        const cols = processMeminfoRow(rowStr)
-        meminfoSection[cols[0]] = cols.splice(1, cols.length - 1)
+        const cols = processRawSectionRow(rowStr)
+        section[cols[0]] = cols.splice(1, cols.length - 1)
       }
-    } else if (mode === FMode.AppSummary) {
-      const modeMatchingResult = rowStr.match(reg3)
-      if (modeMatchingResult) {
-        mode = FMode.Objects
-        break
-      }
-      if (rowStr.length !== 0) {
-        // const cols = processAppSummaryRow(rowStr)
-      }
-      continue
-    } else {
-      continue
     }
   }
+  return section
+}
+
+export function parseAppSummarySection(input: string) {
+  const start = input.indexOf('App Summary')
+  const end = input.indexOf('Objects')
+  const cut = input.substring(start, end)
+  const section: any = {}
+  for (const key in MemSummaryColMatcher) {
+    if (Object.prototype.hasOwnProperty.call(MemSummaryColMatcher, key)) {
+      const matcher = MemSummaryColMatcher[key]
+      const matched = cut.match(matcher)
+      if (matched && matched?.length > 0) {
+        section[key] = Number(matched[1])
+      }
+    }
+  }
+  // console.log(section)
+  return section
+}
+
+export function formatMeminfo(input: string) {
+  const pidMatched = input.match(/pid\s+(\d+)/)
+  const pid = pidMatched && pidMatched.length > 0 ? pidMatched[1] : ''
+  const pnameMatched = input.match(/\[(.+)\]/)
+  const pname = pnameMatched && pnameMatched.length > 0 ? pnameMatched[1] : ''
+
   return {
     pid,
     pname,
-    meminfoSection,
+    rawSection: parseRawSection(input),
+    appSummarySection: parseAppSummarySection(input),
   }
 }
 
