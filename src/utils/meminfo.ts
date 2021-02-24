@@ -3,9 +3,9 @@ import { combineLatest, interval, Observable, of, OperatorFunction } from 'rxjs'
 import { mergeMap, switchMap } from 'rxjs/operators'
 import { formatMeminfo } from './meminfo-parser'
 
-const command = (proc: string) => () => {
+const command = (proc: string, device: string) => () => {
   return new Observable<string>(subscriber => {
-    exec(`adb -s 3422ed52 shell dumpsys meminfo ${proc}`, (error, stdout) => {
+    exec(`adb -s ${device} shell dumpsys meminfo ${proc}`, (error, stdout) => {
       if (error) {
         subscriber.error(error)
       } else {
@@ -29,14 +29,14 @@ export class MeminfoMonitor {
 
   private time = DefaultMeminfoMonitorTime;
 
-  constructor(processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
-    this.update(processes, time)
+  constructor(device: string, processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
+    this.update(device, processes, time)
   }
 
-  update(processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
+  update(device: string, processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
     this.processes = [...processes]
     this.commands = this.processes.map(p => {
-      return command(p)()
+      return command(p, device)()
     })
     this.time = time
   }

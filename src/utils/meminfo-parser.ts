@@ -1,4 +1,4 @@
-import { SummaryType } from "./meminfo-keys"
+import { SummaryType } from './meminfo-keys'
 
 enum FMode {
   Free = 'Free',
@@ -30,7 +30,9 @@ export const MemSummaryColNames = [
   SummaryType.TotalSwapPss,
 ]
 
-export const MemSummaryColMatcher = {
+export const MemSummaryColMatcher: {
+  [key in keyof typeof SummaryType]: RegExp;
+} = {
   [SummaryType.JavaHeap]: /Java\s+Heap:\s+(\d+)/,
   [SummaryType.NativeHeap]: /Native\s+Heap:\s+(\d+)/,
   [SummaryType.Code]: /Code:\s+(\d+)/,
@@ -89,7 +91,7 @@ export function parseAppSummarySection(input: string) {
   const section: any = {}
   for (const key in MemSummaryColMatcher) {
     if (Object.prototype.hasOwnProperty.call(MemSummaryColMatcher, key)) {
-      const matcher = MemSummaryColMatcher[key]
+      const matcher = MemSummaryColMatcher[key as SummaryType]
       const matched = cut.match(matcher)
       if (matched && matched?.length > 0) {
         section[key] = Number(matched[1])
@@ -118,4 +120,3 @@ export function formatIntoAlignCol(input: string, length: number) {
   const emptyStr = (new Array(length + 1)).join(' ')
   return `${input}${emptyStr.slice(input.length - 1, length - 1)}`
 }
-

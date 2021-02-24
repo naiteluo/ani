@@ -1,5 +1,10 @@
 import { Server } from 'socket.io'
 import * as http from 'http'
+import { cli } from 'cli-ux'
+
+const Koa = require('koa')
+const koaStatic = require('koa-static')
+const path = require('path')
 
 export class MemServer {
   server: http.Server
@@ -17,6 +22,11 @@ export class MemServer {
         origin: '*',
       },
     })
+    const app = new Koa()
+    app.use(koaStatic(path.join(__dirname, '../../ani-web/dist/ani-web')))
+    app.listen(3000)
+    cli.log('Dashboard running in http://localhost:4000')
+    cli.open('http://localhost:4000')
   }
 
   async start() {

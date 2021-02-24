@@ -4,6 +4,7 @@ import { MeminfoMonitor } from '../utils/meminfo'
 import { MemServer } from '../server'
 import { execSync } from 'child_process'
 import { Subscription } from 'rxjs'
+import select from 'cli-select'
 
 export default class Mem extends Command {
   static description = 'describe the command here'
@@ -20,6 +21,8 @@ export default class Mem extends Command {
 
   private unsubsriber?: Subscription;
 
+  private deviceID!: string;
+
   private processes: string[] = [];
 
   private timePerSnapshot = 3000;
@@ -33,9 +36,23 @@ export default class Mem extends Command {
     const { args, flags } = this.parse(Mem)
     this.timePerSnapshot = flags.time ?? 3000
 
+    const devices = this.getDeivesList()
+
+    if (!devices || devices.length === 0) {
+      this.error('no abd connected device found.')
+      this.exit()
+    }
+
+    const selection = await select({
+      values: devices,
+    })
+    this.deviceID = selection.value
+
     const processes = this.parseProcesses(args.processes, flags.query, true)
     this.processesStr = args.processes
     this.processes = processes
+
+    cli.styledJSON(processes)
 
     try {
       await this.setupServer()
@@ -56,7 +73,7 @@ export default class Mem extends Command {
   }
 
   startChannel() {
-    const meminfoMonitor = new MeminfoMonitor(this.processes, this.timePerSnapshot)
+    const meminfoMonitor = new MeminfoMonitor(this.deviceID, this.processes, this.timePerSnapshot)
     const meminfoIntervalObserver = meminfoMonitor.interval()
     this.unsubsriber = meminfoIntervalObserver.subscribe(res => {
       // push data to client
@@ -92,9 +109,19 @@ export default class Mem extends Command {
     }
   }
 
+  getDeivesList(): string[] {
+    const stdout = execSync('adb devices')
+    const arr = stdout.toString().split('\n')
+    const list = arr.slice(1, arr.length).map(str => {
+      const matched = str.match(/([^\s]*)\s+/)
+      return matched ? matched[1] : ''
+    }).filter(v => v)
+    return list
+  }
+
   fuzzyQueryProcess(query: string) {
     const regex = new RegExp(query, 'ig')
-    const stdout = execSync('adb -s 3422ed52 shell ps -o NAME -w')
+    const stdout = execSync(`adb -s ${this.deviceID} shell ps -o NAME -w`)
     const list = stdout.toString().split('\n')
     const results = list.filter(str => {
       return str.match(regex)
