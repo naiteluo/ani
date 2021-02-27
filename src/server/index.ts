@@ -7,12 +7,16 @@ const koaStatic = require('koa-static')
 const path = require('path')
 
 export class MemServer {
+  app: any
+
   server: http.Server
 
   io: Server
 
-  constructor(private port: number = 3000) {
+  constructor(private port: number = 3000, private debugMode = false) {
     // create live server
+    this.app = new Koa()
+    this.app.use(koaStatic(path.join(__dirname, '../../ani-web/dist/ani-web')))
     this.server = http.createServer()
     this.io = new Server(this.server, {
       pingInterval: 10000,
@@ -22,28 +26,30 @@ export class MemServer {
         origin: '*',
       },
     })
-    const app = new Koa()
-    app.use(koaStatic(path.join(__dirname, '../../ani-web/dist/ani-web')))
-    app.listen(3000)
-    cli.log('Dashboard running in http://localhost:4000')
-    cli.open('http://localhost:4000')
   }
 
   async start() {
     return new Promise((resolve, reject) => {
       try {
-        this.server.listen(this.port, resolve)
+        this.app.listen(this.port, () => {
+          cli.log(`Dashboard running in http://localhost:${this.port}`)
+          this.server.listen(this.port + 1, () => {
+            cli.log(`Socket.io running in port: ${this.port + 1}`)
+            resolve(null)
+          })
+        })
       } catch (error) {
         reject(error)
       }
     })
   }
 
-  startStatic() {
-    // TODO start a static server for website
-  }
-
   ioEmit(ev: string | symbol, ...args: any[]) {
     this.io.sockets.emit(ev, ...args)
+  }
+
+  launchDashboard() {
+    const port = this.debugMode ? 4200 : this.port
+    cli.open(`http://localhost:${port}`)
   }
 }

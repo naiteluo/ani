@@ -5,6 +5,7 @@ import { MemServer } from '../server'
 import { execSync } from 'child_process'
 import { Subscription } from 'rxjs'
 import select from 'cli-select'
+import chalk = require('chalk')
 
 export default class Mem extends Command {
   static description = 'describe the command here'
@@ -13,6 +14,8 @@ export default class Mem extends Command {
     force: flags.boolean({ char: 'f' }),
     time: flags.integer({ char: 't', description: 'time span of every snapshot, default: 3000(ms)' }),
     query: flags.string({ char: 'q', description: 'fuzzy query processes by name' }),
+    debug: flags.boolean({ char: 'd', description: 'debug mode' }),
+    autoLaunch: flags.boolean({ char: 'a', description: 'auto launch dashboard' }),
   }
 
   static args = [{ name: 'processes' }]
@@ -31,28 +34,37 @@ export default class Mem extends Command {
 
   private detectorTimer?: NodeJS.Timeout;
 
+  private debugMode: boolean | undefined;
+
+  private autoLaunch = false;
+
   async run() {
     // args parsing
     const { args, flags } = this.parse(Mem)
     this.timePerSnapshot = flags.time ?? 3000
+    this.debugMode = flags.debug ?? false
+    this.autoLaunch = flags.autoLaunch ?? false
 
     const devices = this.getDeivesList()
 
     if (!devices || devices.length === 0) {
-      this.error('no abd connected device found.')
+      this.error('No connected device found.')
       this.exit()
     }
 
     const selection = await select({
       values: devices,
     })
+
     this.deviceID = selection.value
+
+    this.logDevice()
 
     const processes = this.parseProcesses(args.processes, flags.query, true)
     this.processesStr = args.processes
     this.processes = processes
 
-    cli.styledJSON(processes)
+    this.logProcess()
 
     try {
       await this.setupServer()
@@ -130,35 +142,33 @@ export default class Mem extends Command {
   }
 
   parseProcesses(processesArg = '', query = '', log = false) {
-    let processes: string[] = []
+    try {
+      let processes: string[] = []
 
-    if (processesArg.length !== 0) {
-      processes = processesArg.split(',')
-    }
-    if (processes.length === 0) {
-      // get processes name by query
-      if (query.length > 0) {
-        processes = this.fuzzyQueryProcess(query)
+      if (processesArg.length !== 0) {
+        processes = processesArg.split(',')
       }
+      if (processes.length === 0) {
+        // get processes name by query
+        if (query.length > 0) {
+          processes = this.fuzzyQueryProcess(query)
+        }
+      }
+      if (processes.length === 0) {
+        this.error('Can\'t find valid processes.')
+      }
+      return processes
+    } catch (error:unknown) {
+      this.error(JSON.stringify(error))
+      this.exit()
     }
-    if (processes.length === 0) {
-      this.error('Can\'t find valid processes.')
-    }
-    log && this.log()
-    // list processes
-    log && this.log('Target processes:')
-    log && processes.forEach(p => {
-      this.log(`  - ${p}`)
-    })
-    return processes
   }
 
   /**
    * start live server
    */
   async setupServer() {
-    cli.action.start('Live server')
-    this.server = new MemServer()
+    this.server = new MemServer(3000, this.debugMode)
 
     await this.server.start()
     this.server.io.on('connection', socket => {
@@ -169,7 +179,9 @@ export default class Mem extends Command {
         this.stopChannel()
       })
     })
-    cli.action.stop('Live server')
+    if (this.autoLaunch) {
+      this.server.launchDashboard()
+    }
   }
 
   dispose() {
@@ -184,5 +196,17 @@ export default class Mem extends Command {
 
   isProcessesEqual(a: string[], b: string[]) {
     return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  logProcess() {
+    this.log('Target process: ')
+    cli.styledJSON(this.processes)
+    this.log()
+  }
+
+  logDevice() {
+    this.log('Target device ID: ')
+    this.log(chalk.green(this.deviceID))
+    this.log()
   }
 }

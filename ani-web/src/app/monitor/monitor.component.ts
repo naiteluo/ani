@@ -98,7 +98,7 @@ export class MonitorComponent implements OnInit {
   columnsToDisplay: string[] = this.displayedSummaryColumns.slice()
 
   constructor() {
-    this.socket = io('ws://localhost:3000')
+    this.socket = io('ws://localhost:3001')
   }
 
   private cur = 0;
