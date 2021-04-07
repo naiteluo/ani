@@ -10,6 +10,10 @@ import { LineSeriesOption } from 'echarts'
 export class MonitorComponent implements OnInit {
   private socket: Socket;
 
+  pids = '';
+
+  freq = 2000;
+
   processDataArr: {
     [key: string]: {
       processName: string;
@@ -84,7 +88,7 @@ export class MonitorComponent implements OnInit {
         return {
           name: v,
           type: 'line',
-          stack: v !== 'Total' ? 'Total' : '',
+          stack: v === 'Total' ? '' : 'Total',
           areaStyle: {},
           emphasis: {
             focus: 'series',
@@ -96,6 +100,12 @@ export class MonitorComponent implements OnInit {
   }
 
   columnsToDisplay: string[] = this.displayedSummaryColumns.slice()
+
+  downloadFileLink?: string;
+
+  downloadFileName?: string;
+
+  popup?: Window | null;
 
   constructor() {
     this.socket = io('ws://localhost:3001')
@@ -119,7 +129,8 @@ export class MonitorComponent implements OnInit {
             xArr: [],
             data: [],
           }
-          this.processDataArr[data.pname].chartOption.title.text = data.pname
+          const tempNameArr = data.pname.split('.')
+          this.processDataArr[data.pname].chartOption.title.text = tempNameArr[tempNameArr.length - 1]
         }
         const newData = this.processDataArr[data.pname]
         const result: any = {}
@@ -184,5 +195,58 @@ export class MonitorComponent implements OnInit {
 
   onStopBtnClick() {
     this.socket.emit('stop')
+  }
+
+  onSnapshotBtnCLick() {
+    this.socket.emit('snapshot', this.pids.split(','))
+  }
+
+  onExportBtnClick() {
+    const file = new Blob([JSON.stringify({
+      pids: this.pids,
+      processDataArr: this.processDataArr,
+    })], { type: 'application/octet-stream' })
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    this.downloadFileLink = URL.createObjectURL(file)
+    this.downloadFileName = `data-${Number(new Date())}`
+    this.popup = this.popup || open('', '_blank')
+    if (this.popup) {
+      this.popup.document.title = 'downloading...'
+      this.popup.document.body.innerText = 'downloading...'
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const url = reader.result
+      if (this.popup) {
+        this.popup!.location.href = url as string
+      }
+      this.popup = null // reverse-tabnabbing #460
+    }
+    reader.readAsDataURL(file)
+  }
+
+  onImportBtnClick(e: Event) {
+    const input = e.target as HTMLInputElement
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      const text = reader.result?.toString()
+      if (text) {
+        const data = JSON.parse(text)
+
+        this.pids = data.pids
+        this.processDataArr = data.processDataArr
+      } else {
+        // eslint-disable-next-line no-console
+        console.error('invalid input file')
+      }
+    })
+    reader.readAsText(input.files![0])
+  }
+
+  onUpdateConfigBtnCLick() {
+    this.socket.emit('config', {
+      pids: (this.pids && this.pids.split(',').length > 0) ? this.pids.split(',') : undefined,
+      freq: Number(this.freq),
+    })
   }
 }

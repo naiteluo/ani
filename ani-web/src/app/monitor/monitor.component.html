@@ -1,8 +1,33 @@
 <div class="monitor">
   <section>
     <div class="control-button-row">
-      <button mat-stroked-button (click)="onStartBtnClick()" color="primary">Start</button>
-      <button mat-stroked-button (click)="onStopBtnClick()" color="warn">Stop</button>
+      <input type="text" placeholder="ms" [(ngModel)]="freq">
+      <input type="text" placeholder="pids" [(ngModel)]="pids" /> {{ pids }}
+      <button mat-stroked-button (click)="onUpdateConfigBtnCLick()" color="primary">
+        UpdateConfig
+      </button> |
+      <button mat-stroked-button (click)="onSnapshotBtnCLick()" color="primary">
+        Snapshot
+      </button>
+      <button mat-stroked-button (click)="onStartBtnClick()" color="primary">
+        Start
+      </button>
+      <button mat-stroked-button (click)="onStopBtnClick()" color="warn">
+        Stop
+      </button> |
+      <button mat-stroked-button (click)="onExportBtnClick()" color="primary">
+        Export
+      </button>
+      <label for="file">导入：</label>
+      <input
+        id="file"
+        name="file"
+        type="file"
+        accept="*"
+        mat-stroked-button
+        (change)="onImportBtnClick($event)"
+        color="primary"
+      />
     </div>
   </section>
   <div

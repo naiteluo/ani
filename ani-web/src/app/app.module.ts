@@ -41,6 +41,7 @@ import { MatPaginatorModule } from '@angular/material/paginator'
 import { NgxEchartsModule } from 'ngx-echarts'
 import * as echarts from 'echarts'
 import 'echarts-gl'
+import { FormsModule } from '@angular/forms'
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import 'echarts-gl'
       echarts,
     }),
     BrowserModule,
+    FormsModule,
     AppRoutingModule,
     BrowserAnimationsModule,
     MatCheckboxModule,

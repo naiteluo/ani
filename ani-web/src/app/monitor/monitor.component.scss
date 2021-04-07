@@ -5,12 +5,20 @@
 .mem-chart-container {
   flex: 1;
   padding: 20px;
-  width: 40vw;
+  width: 90vw;
   height: 20vh;
+}
+.mem-table-container {
   overflow-y: scroll;
+  th {
+    font-size: xx-small;
+  }
 }
 .mem-chart-container {
-  flex: 2;
+  flex: 3;
+  .demo-chart {
+    height: 100%;
+  }
 }
 .mem-table {
   width: 100%;

@@ -28,7 +28,7 @@ export default class Mem extends Command {
 
   private processes: string[] = [];
 
-  private timePerSnapshot = 3000;
+  private timePerSnapshot = 5000;
 
   private processesStr = '';
 
@@ -37,6 +37,8 @@ export default class Mem extends Command {
   private debugMode: boolean | undefined;
 
   private autoLaunch = false;
+
+  private isChannelStarted = false;
 
   async run() {
     // args parsing
@@ -85,15 +87,35 @@ export default class Mem extends Command {
   }
 
   startChannel() {
+    if (this.unsubsriber) {
+      return
+    }
     const meminfoMonitor = new MeminfoMonitor(this.deviceID, this.processes, this.timePerSnapshot)
     const meminfoIntervalObserver = meminfoMonitor.interval()
     this.unsubsriber = meminfoIntervalObserver.subscribe(res => {
       // push data to client
       this.server.ioEmit('data', res)
     })
+    this.isChannelStarted = true
+  }
+
+  takeSnapshot(pids?: string[]) {
+    const meminfoMonitor = new MeminfoMonitor(this.deviceID, pids ? pids : this.processes, this.timePerSnapshot)
+    const meminfoObserver = meminfoMonitor.one()
+    const unsubsriber = meminfoObserver.subscribe(res => {
+      this.server.ioEmit('data', res)
+      unsubsriber.unsubscribe()
+    })
   }
 
   stopChannel() {
+    if (this.isChannelStarted) {
+      this.killChannel()
+      this.isChannelStarted = false
+    }
+  }
+
+  killChannel() {
     if (this.unsubsriber) {
       this.unsubsriber.unsubscribe()
       this.unsubsriber = undefined
@@ -107,8 +129,10 @@ export default class Mem extends Command {
         if (!this.isProcessesEqual(processes, this.processes)) {
           this.processes = processes
           this.log('Processes changes detected, restart channel.')
-          this.stopChannel()
-          this.startChannel()
+          this.killChannel()
+          if (this.isChannelStarted) {
+            this.startChannel()
+          }
         }
       }, this.timePerSnapshot)
     }
@@ -158,7 +182,7 @@ export default class Mem extends Command {
         this.error('Can\'t find valid processes.')
       }
       return processes
-    } catch (error:unknown) {
+    } catch (error: unknown) {
       this.error(JSON.stringify(error))
       this.exit()
     }
@@ -173,10 +197,22 @@ export default class Mem extends Command {
     await this.server.start()
     this.server.io.on('connection', socket => {
       socket.on('start', () => {
+        this.stopChannel()
         this.startChannel()
       })
       socket.on('stop', () => {
         this.stopChannel()
+      })
+      socket.on('snapshot', (data: string[]) => {
+        this.stopChannel()
+        this.takeSnapshot(data)
+      })
+      socket.on('config', (data: { pids?: string[], freq: number }) => {
+        if (data.pids) {
+          this.processes = data.pids
+        }
+        this.timePerSnapshot = data.freq
+        this.log('config updated.')
       })
     })
     if (this.autoLaunch) {
