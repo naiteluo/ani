@@ -67,7 +67,6 @@ export default class Mem extends Command {
     this.processes = processes
 
     this.logProcess()
-
     try {
       await this.setupServer()
       // init Meminfo Observers
@@ -157,11 +156,12 @@ export default class Mem extends Command {
 
   fuzzyQueryProcess(query: string) {
     const regex = new RegExp(query, 'ig')
-    const stdout = execSync(`adb -s ${this.deviceID} shell ps -o NAME -w`)
+    const stdout = execSync(`adb -s ${this.deviceID} shell ps -o NAME,PID`)
     const list = stdout.toString().split('\n')
-    const results = list.filter(str => {
+    let results = list.filter(str => {
       return str.match(regex)
     })
+    results = results.map(v => v.replace(/\s+/, ' '))
     return results
   }
 

@@ -34,7 +34,9 @@ export class MeminfoMonitor {
   }
 
   update(device: string, processes: string[] = [], time: number = DefaultMeminfoMonitorTime) {
-    this.processes = [...processes]
+    this.processes = processes.map(v => {
+      return v.split(' ')[1]
+    })
     this.commands = this.processes.map(p => {
       return command(p, device)()
     })

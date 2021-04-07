@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core'
 import { io, Socket } from 'socket.io-client'
 import { LineSeriesOption } from 'echarts'
 
+const ProcessDataArrDefault = {}
+
 @Component({
   selector: 'app-monitor',
   templateUrl: './monitor.component.html',
@@ -122,17 +124,17 @@ export class MonitorComponent implements OnInit {
       const marks: any = {}
       // process data from server
       dataArr.forEach((data: any) => {
-        if (!this.processDataArr[data.pname]) {
-          this.processDataArr[data.pname] = {
+        if (!this.processDataArr[data.pid]) {
+          this.processDataArr[data.pid] = {
             processName: data.pname,
             chartOption: JSON.parse(JSON.stringify(this.chartOptionTpl)),
             xArr: [],
             data: [],
           }
           const tempNameArr = data.pname.split('.')
-          this.processDataArr[data.pname].chartOption.title.text = tempNameArr[tempNameArr.length - 1]
+          this.processDataArr[data.pid].chartOption.title.text = `${data.pid}-${tempNameArr[tempNameArr.length - 1]}`
         }
-        const newData = this.processDataArr[data.pname]
+        const newData = this.processDataArr[data.pid]
         const result: any = {}
         for (const key in data.appSummarySection) {
           if (Object.prototype.hasOwnProperty.call(data.appSummarySection, key)) {
@@ -156,7 +158,7 @@ export class MonitorComponent implements OnInit {
           }
         })
         newData.chartOption = { ...newData.chartOption }
-        marks[data.pname] = true
+        marks[data.pid] = true
       })
       // update yaxis and process data not in server res but in local data arr
       for (const key in this.processDataArr) {
@@ -248,5 +250,9 @@ export class MonitorComponent implements OnInit {
       pids: (this.pids && this.pids.split(',').length > 0) ? this.pids.split(',') : undefined,
       freq: Number(this.freq),
     })
+  }
+
+  onClearBtnCLick() {
+    this.processDataArr = {}
   }
 }
