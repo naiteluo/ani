@@ -2,8 +2,6 @@ import { Component, OnInit } from '@angular/core'
 import { io, Socket } from 'socket.io-client'
 import { LineSeriesOption } from 'echarts'
 
-const ProcessDataArrDefault = {}
-
 @Component({
   selector: 'app-monitor',
   templateUrl: './monitor.component.html',
@@ -43,8 +41,8 @@ export class MonitorComponent implements OnInit {
     'Graphics',
     'PrivateOther',
     'System',
-    'Total',
     'TotalSwapPss',
+    'Total',
   ];
 
   chartOptionTpl: any = {
@@ -237,6 +235,7 @@ export class MonitorComponent implements OnInit {
 
         this.pids = data.pids
         this.processDataArr = data.processDataArr
+        this.socket.close()
       } else {
         // eslint-disable-next-line no-console
         console.error('invalid input file')

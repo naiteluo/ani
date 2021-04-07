@@ -179,12 +179,11 @@ export default class Mem extends Command {
         }
       }
       if (processes.length === 0) {
-        this.error('Can\'t find valid processes.')
+        this.log('Can\'t find valid processes.')
       }
       return processes
     } catch (error: unknown) {
       this.error(JSON.stringify(error))
-      this.exit()
     }
   }
 
