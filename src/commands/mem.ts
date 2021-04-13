@@ -28,7 +28,7 @@ export default class Mem extends Command {
 
   private processes: string[] = [];
 
-  private timePerSnapshot = 5000;
+  private timePerSnapshot = 3000;
 
   private processesStr = '';
 
@@ -40,12 +40,15 @@ export default class Mem extends Command {
 
   private isChannelStarted = false;
 
+  private query = '';
+
   async run() {
     // args parsing
     const { args, flags } = this.parse(Mem)
     this.timePerSnapshot = flags.time ?? 3000
     this.debugMode = flags.debug ?? false
     this.autoLaunch = flags.autoLaunch ?? false
+    this.query = flags.query ?? ''
 
     const devices = this.getDeivesList()
 
@@ -62,7 +65,7 @@ export default class Mem extends Command {
 
     this.logDevice()
 
-    const processes = this.parseProcesses(args.processes, flags.query, true)
+    const processes = this.parseProcesses(args.processes, this.query, true)
     this.processesStr = args.processes
     this.processes = processes
 
@@ -72,7 +75,7 @@ export default class Mem extends Command {
       // init Meminfo Observers
 
       // this.startChannel()
-      this.startLiveProcessDetector(flags.query)
+      this.startLiveProcessDetector()
 
       // wait user input to stop
       await cli.anykey('Press any key to **Stop** recording')
@@ -98,8 +101,8 @@ export default class Mem extends Command {
     this.isChannelStarted = true
   }
 
-  takeSnapshot(pids?: string[]) {
-    const meminfoMonitor = new MeminfoMonitor(this.deviceID, pids ? pids : this.processes, this.timePerSnapshot)
+  takeSnapshot() {
+    const meminfoMonitor = new MeminfoMonitor(this.deviceID, this.processes, this.timePerSnapshot)
     const meminfoObserver = meminfoMonitor.one()
     const unsubsriber = meminfoObserver.subscribe(res => {
       this.server.ioEmit('data', res)
@@ -121,10 +124,10 @@ export default class Mem extends Command {
     }
   }
 
-  startLiveProcessDetector(query = '') {
-    if (query.length > 0) {
-      this.detectorTimer = setInterval(() => {
-        const processes = this.parseProcesses(this.processesStr, query)
+  startLiveProcessDetector() {
+    this.detectorTimer = setInterval(() => {
+      if (this.query.length > 0) {
+        const processes = this.parseProcesses(this.processesStr, this.query)
         if (!this.isProcessesEqual(processes, this.processes)) {
           this.processes = processes
           this.log('Processes changes detected, restart channel.')
@@ -133,8 +136,8 @@ export default class Mem extends Command {
             this.startChannel()
           }
         }
-      }, this.timePerSnapshot)
-    }
+      }
+    }, this.timePerSnapshot)
   }
 
   stopLiveProcessDetector() {
@@ -166,6 +169,10 @@ export default class Mem extends Command {
   }
 
   parseProcesses(processesArg = '', query = '', log = false) {
+    if (query.length === 0) {
+      this.log('process query is empty!')
+      return []
+    }
     try {
       let processes: string[] = []
 
@@ -202,16 +209,18 @@ export default class Mem extends Command {
       socket.on('stop', () => {
         this.stopChannel()
       })
-      socket.on('snapshot', (data: string[]) => {
+      socket.on('snapshot', () => {
         this.stopChannel()
-        this.takeSnapshot(data)
+        this.takeSnapshot()
       })
-      socket.on('config', (data: { pids?: string[], freq: number }) => {
+      socket.on('config', (data: { query?: string; pids?: string[]; freq: number }) => {
         if (data.pids) {
           this.processes = data.pids
         }
+        this.query = data.query ?? ''
         this.timePerSnapshot = data.freq
-        this.log('config updated.')
+        this.log('config updated.', data)
+
       })
     })
     if (this.autoLaunch) {

@@ -1,6 +1,12 @@
 .mem-container {
   display: flex;
 }
+.control-button-row {
+  padding: 5px 10px;
+  mat-form-field {
+    margin-right: 10px;
+  }
+}
 .mem-table-container,
 .mem-chart-container {
   flex: 1;

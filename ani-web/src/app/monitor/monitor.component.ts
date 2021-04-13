@@ -12,7 +12,9 @@ export class MonitorComponent implements OnInit {
 
   pids = '';
 
-  freq = 2000;
+  freq = 1000;
+
+  query = 'htest|webview:sandboxed';
 
   processDataArr: {
     [key: string]: {
@@ -248,6 +250,7 @@ export class MonitorComponent implements OnInit {
     this.socket.emit('config', {
       pids: (this.pids && this.pids.split(',').length > 0) ? this.pids.split(',') : undefined,
       freq: Number(this.freq),
+      query: this.query,
     })
   }
 

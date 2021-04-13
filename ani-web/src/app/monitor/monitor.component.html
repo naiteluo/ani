@@ -1,8 +1,18 @@
 <div class="monitor">
   <section>
     <div class="control-button-row">
-      <input type="text" placeholder="ms" [(ngModel)]="freq">
-      <input type="text" placeholder="pids" [(ngModel)]="pids" /> {{ pids }}
+      <mat-form-field>
+        <mat-label>采集频率（ms）</mat-label>
+        <input type="text" matInput [(ngModel)]="freq" placeholder="2000ms">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>指定进程id或名称</mat-label>
+        <input type="text" matInput [(ngModel)]="pids" placeholder="pid or pname concat with ," [(ngModel)]="pids">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>模糊进程检索</mat-label>
+        <input type="text" matInput [(ngModel)]="query" placeholder="name_a|name_b">
+      </mat-form-field>
       <button mat-stroked-button (click)="onUpdateConfigBtnCLick()" color="primary">
         UpdateConfig
       </button> |
