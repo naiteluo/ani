@@ -15,7 +15,7 @@ ani
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g ani
+$ npm install -g ani --registry=http://ued.zuoyebang.cc/npm/
 $ ani COMMAND
 running command...
 $ ani (-v|--version|version)
