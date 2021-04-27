@@ -189,7 +189,7 @@ export default class Mem extends Command {
         this.log('Can\'t find valid processes.')
       }
       return processes
-    } catch (error: any) {
+    } catch (error) {
       this.error(JSON.stringify(error))
     }
   }
