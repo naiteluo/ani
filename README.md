@@ -15,11 +15,11 @@ ani
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g ani --registry=http://ued.zuoyebang.cc/npm/
+$ npm install -g ani
 $ ani COMMAND
 running command...
 $ ani (-v|--version|version)
-ani/0.0.2 darwin-x64 node-v12.16.3
+ani/0.0.3 darwin-x64 node-v12.16.3
 $ ani --help [COMMAND]
 USAGE
   $ ani COMMAND
@@ -61,5 +61,5 @@ OPTIONS
   -d, --debug       debug mode
 ```
 
-_See code: [src/commands/mem.ts](https://github.com/mob/ani/blob/v0.0.2/src/commands/mem.ts)_
+_See code: [src/commands/mem.ts](https://github.com/mob/ani/blob/v0.0.3/src/commands/mem.ts)_
 <!-- commandsstop -->
