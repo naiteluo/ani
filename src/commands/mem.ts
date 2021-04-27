@@ -8,12 +8,9 @@ import select from 'cli-select'
 import chalk = require('chalk')
 
 export default class Mem extends Command {
-  static description = 'describe the command here'
+  static description = 'yet another android process memory profiler'
 
   static flags = {
-    force: flags.boolean({ char: 'f' }),
-    time: flags.integer({ char: 't', description: 'time span of every snapshot, default: 3000(ms)' }),
-    query: flags.string({ char: 'q', description: 'fuzzy query processes by name' }),
     debug: flags.boolean({ char: 'd', description: 'debug mode' }),
     autoLaunch: flags.boolean({ char: 'a', description: 'auto launch dashboard' }),
   }
@@ -45,10 +42,10 @@ export default class Mem extends Command {
   async run() {
     // args parsing
     const { args, flags } = this.parse(Mem)
-    this.timePerSnapshot = flags.time ?? 3000
+    this.timePerSnapshot = 1000
     this.debugMode = flags.debug ?? false
     this.autoLaunch = flags.autoLaunch ?? false
-    this.query = flags.query ?? ''
+    this.query = ''
 
     const devices = this.getDeivesList()
 

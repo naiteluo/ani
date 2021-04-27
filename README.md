@@ -19,7 +19,7 @@ $ npm install -g ani
 $ ani COMMAND
 running command...
 $ ani (-v|--version|version)
-ani/0.0.0 darwin-x64 node-v12.16.3
+ani/0.0.1 darwin-x64 node-v12.16.3
 $ ani --help [COMMAND]
 USAGE
   $ ani COMMAND
@@ -30,7 +30,8 @@ USAGE
 <!-- commands -->
 * [`ani hello [FILE]`](#ani-hello-file)
 * [`ani help [COMMAND]`](#ani-help-command)
-* [`ani mem [FILE]`](#ani-mem-file)
+* [`ani mem [PROCESSES]`](#ani-mem-processes)
+* [`ani test [FILE]`](#ani-test-file)
 
 ## `ani hello [FILE]`
 
@@ -50,7 +51,7 @@ EXAMPLE
   hello world from ./src/hello.ts!
 ```
 
-_See code: [src/commands/hello.ts](https://github.com/mob/ani/blob/v0.0.0/src/commands/hello.ts)_
+_See code: [src/commands/hello.ts](https://github.com/mob/ani/blob/v0.0.1/src/commands/hello.ts)_
 
 ## `ani help [COMMAND]`
 
@@ -69,19 +70,41 @@ OPTIONS
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.1/src/commands/help.ts)_
 
-## `ani mem [FILE]`
+## `ani mem [PROCESSES]`
 
 describe the command here
 
 ```
 USAGE
-  $ ani mem [FILE]
+  $ ani mem [PROCESSES]
+
+OPTIONS
+  -a, --autoLaunch   auto launch dashboard
+  -d, --debug        debug mode
+  -f, --force
+  -q, --query=query  fuzzy query processes by name
+  -t, --time=time    time span of every snapshot, default: 3000(ms)
+```
+
+_See code: [src/commands/mem.ts](https://github.com/mob/ani/blob/v0.0.1/src/commands/mem.ts)_
+
+## `ani test [FILE]`
+
+describe the command here
+
+```
+USAGE
+  $ ani test [FILE]
 
 OPTIONS
   -f, --force
   -h, --help       show CLI help
   -n, --name=name  name to print
+
+EXAMPLE
+  $ ani hello
+  hello world from ./src/hello.ts!
 ```
 
-_See code: [src/commands/mem.ts](https://github.com/mob/ani/blob/v0.0.0/src/commands/mem.ts)_
+_See code: [src/commands/test.ts](https://github.com/mob/ani/blob/v0.0.1/src/commands/test.ts)_
 <!-- commandsstop -->
